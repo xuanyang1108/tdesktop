@@ -8,6 +8,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "grok/grok_api.h"
 
 #include "grok/grok_badge.h"
+#include "apiwrap.h"
 #include "history/history.h"
 #include "main/main_session.h"
 #include "window/window_session_controller.h"
@@ -508,18 +509,19 @@ void Agent::callModel() {
 	body.insert(u"messages"_q, messages);
 	body.insert(u"tools"_q, ToolSpecs());
 	body.insert(u"tool_choice"_q, u"auto"_q);
-	QNetworkRequest request(QUrl(QLatin1String(kEndpoint)));
-	request.setHeader(
+	auto networkRequest = QNetworkRequest(
+		QUrl(QString::fromLatin1(kEndpoint)));
+	networkRequest.setHeader(
 		QNetworkRequest::ContentTypeHeader,
 		u"application/json"_q);
-	request.setRawHeader(
+	networkRequest.setRawHeader(
 		"Authorization",
-		"Bearer " + _storage->apiKey().trimmed().toUtf8());
-	request.setRawHeader("User-Agent", "64Gram-Grok");
-	request.setTransferTimeout(90000);
+		QByteArray("Bearer ") + _storage->apiKey().trimmed().toUtf8());
+	networkRequest.setRawHeader("User-Agent", "64Gram-Grok");
+	networkRequest.setTransferTimeout(90000);
 	const auto generation = _generation;
 	const auto payload = QJsonDocument(body).toJson(QJsonDocument::Compact);
-	const auto reply = Network().post(request, payload);
+	const auto reply = Network().post(networkRequest, payload);
 	_reply = reply;
 	QObject::connect(reply, &QNetworkReply::finished, this, [=] {
 		if (generation != _generation) {

@@ -126,9 +126,8 @@ int Transcript::paintBubble(
 	const auto font = st::normalFont->f;
 	if (bubble.role == u"card"_q) {
 		auto cardHeight = st::grokPad + st::semiboldFont->height + st::grokGap;
-		for (const auto &step : bubble.steps) {
-			cardHeight += st::normalFont->height + st::grokGap;
-		}
+		cardHeight += int(bubble.steps.size())
+			* (st::normalFont->height + st::grokGap);
 		if (!bubble.steps.empty()) {
 			cardHeight += st::grokGap + st::lineWidth * 4;
 		}
