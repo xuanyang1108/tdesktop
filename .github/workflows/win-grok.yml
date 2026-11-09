@@ -266,17 +266,17 @@ jobs:
           cd %TBUILD%\%REPO_NAME%\Telegram
           call configure.bat x64 ^
           %TDESKTOP_BUILD_API% ^
-          -D CMAKE_CONFIGURATION_TYPES=Release ^
+          -D CMAKE_CONFIGURATION_TYPES=Debug ^
           -D CMAKE_COMPILE_WARNING_AS_ERROR=ON ^
+          -D CMAKE_MSVC_DEBUG_INFORMATION_FORMAT= ^
           -D DESKTOP_APP_DISABLE_AUTOUPDATE=ON ^
-          -D DESKTOP_APP_DISABLE_CRASH_REPORTS=ON ^
-          -D DESKTOP_APP_ENABLE_LTO=OFF
-          cmake --build ..\out --config Release --parallel --target Telegram --target Updater
+          -D DESKTOP_APP_DISABLE_CRASH_REPORTS=ON
+          cmake --build ..\out --config Debug --parallel --target Telegram --target Updater
 
       - name: Pack portable zip.
         shell: pwsh
         run: |
-          $out = Join-Path $env:TBUILD "$env:REPO_NAME\out\Release"
+          $out = Join-Path $env:TBUILD "$env:REPO_NAME\out\Debug"
           $stage = Join-Path $env:GITHUB_WORKSPACE "artifact\Telegram"
           New-Item -ItemType Directory -Force -Path $stage | Out-Null
           Copy-Item (Join-Path $out "Telegram.exe") $stage
@@ -294,6 +294,7 @@ jobs:
             "Default when no Actions secrets are set: 611335 (open credentials, see docs/grok-windows-build.md)."
             "To use your own later, set repository secrets API_ID and API_HASH and rerun Windows Grok build."
             "The xAI key is entered in the panel settings after launch. It is not in this zip."
+            "This is the Debug build, matching the Debug libraries from prepare (skip-release)."
             "Autoupdate is disabled."
           ) -join "`n"
           Set-Content -Encoding utf8 -Path (Join-Path $stage "BUILD.txt") -Value $note
