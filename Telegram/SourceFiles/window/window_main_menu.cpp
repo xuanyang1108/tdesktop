@@ -7,6 +7,8 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "window/window_main_menu.h"
 
+#include "grok/grok_panel.h"
+
 #include "apiwrap.h"
 #include "base/event_filter.h"
 #include "base/qt_signal_producer.h"
@@ -777,6 +779,12 @@ void MainMenu::setupMenu() {
 			_controller->session().supportTemplates().reload();
 		});
 	}
+	addAction(
+		rpl::single(u"Grok 员工"_q),
+		{ &st::menuIconBot }
+	)->setClickedCallback([=] {
+		Grok::Toggle(controller);
+	});
 	addAction(
 		tr::lng_menu_settings(),
 		{ &st::menuIconSettings }

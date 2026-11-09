@@ -1,0 +1,188 @@
+name: Windows Grok build
+
+# One x64 Release portable build for this fork.
+# Without API_ID / API_HASH secrets it uses the open credentials already
+# committed in .github/workflows/win.yml (api_id 611335). See
+# docs/grok-windows-build.md.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'cursor/**'
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+      - 'changelog.txt'
+      - 'LEGAL'
+      - 'LICENSE'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: win-grok-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    name: Windows x64
+    runs-on: windows-latest
+    timeout-minutes: 360
+
+    env:
+      PREPARE_PATH: "Telegram/build/prepare/prepare.py"
+      SECRET_API_ID: ${{ secrets.API_ID }}
+      SECRET_API_HASH: ${{ secrets.API_HASH }}
+      SECRET_API_ID_ALT: ${{ secrets.TELEGRAM_API_ID }}
+      SECRET_API_HASH_ALT: ${{ secrets.TELEGRAM_API_HASH }}
+
+    defaults:
+      run:
+        shell: cmd
+
+    steps:
+      - name: Prepare directories.
+        run: |
+          mkdir %userprofile%\TBuild\Libraries
+          mklink /d %GITHUB_WORKSPACE%\TBuild %userprofile%\TBuild
+          echo TBUILD=%GITHUB_WORKSPACE%\TBuild>>%GITHUB_ENV%
+          echo LibrariesPath=%GITHUB_WORKSPACE%\TBuild\Libraries\win64>>%GITHUB_ENV%
+
+      - name: Get repository name.
+        shell: bash
+        run: echo "REPO_NAME=${GITHUB_REPOSITORY##*/}" >> $GITHUB_ENV
+
+      - name: Clone.
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+          path: ${{ env.TBUILD }}\${{ env.REPO_NAME }}
+
+      - name: First set up.
+        shell: bash
+        run: |
+          DOCPATH=$TBUILD/$REPO_NAME/docs/building-win.md
+          SDK="$(grep "SDK version" $DOCPATH | sed -r 's/.*\*\*(.*)\*\* SDK version.*/\1/')"
+          echo "SDK=$SDK" >> $GITHUB_ENV
+          sed -i '/CMAKE_${lang}_FLAGS_DEBUG_INIT/s/${_Zi}//' "$PROGRAMFILES"/CMake/share/cmake*/Modules/Platform/Windows-MSVC.cmake
+          echo "$(sha256sum $TBUILD/$REPO_NAME/$PREPARE_PATH | awk '{ print $1 }')" >> CACHE_KEY.txt
+          echo "$SDK" >> CACHE_KEY.txt
+          echo "CACHE_KEY=$(sha256sum CACHE_KEY.txt | awk '{ print $1 }')" >> $GITHUB_ENV
+          git config --global user.email "you@example.com"
+          git config --global user.name "Sample"
+
+      - uses: Eden-CI/msvc-dev-cmd@master
+        name: Native Tools Command Prompt.
+        with:
+          arch: x64
+          sdk: ${{ env.SDK }}
+          toolset: '14.44'
+
+      - name: NuGet sources.
+        run: |
+          nuget sources Disable -Name "Microsoft Visual Studio Offline Packages"
+          nuget sources Add -Source https://api.nuget.org/v3/index.json & exit 0
+
+      - name: ThirdParty cache.
+        uses: actions/cache@v6
+        with:
+          path: ${{ env.TBUILD }}\ThirdParty
+          key: ${{ runner.OS }}-${{ runner.arch }}-third-party-grok-${{ env.CACHE_KEY }}
+          restore-keys: ${{ runner.OS }}-${{ runner.arch }}-third-party-
+
+      - name: Libraries cache.
+        uses: actions/cache@v6
+        with:
+          path: |
+            ${{ env.LibrariesPath }}\*
+            !${{ env.LibrariesPath }}\cache_keys
+            !${{ env.LibrariesPath }}\[qQ]t[_-]*
+            ${{ env.LibrariesPath }}\cache_keys\*
+            !${{ env.LibrariesPath }}\cache_keys\[qQ]t[_-]*
+          key: ${{ runner.OS }}-x64-libs-v2-grok-${{ env.CACHE_KEY }}
+          restore-keys: ${{ runner.OS }}-x64-libs-v2-
+
+      - name: Qt cache.
+        uses: actions/cache@v6
+        with:
+          path: |
+            ${{ env.LibrariesPath }}\[qQ]t[_-]*
+            ${{ env.LibrariesPath }}\cache_keys\[qQ]t[_-]*
+          key: ${{ runner.OS }}-x64-qt6-grok-${{ env.CACHE_KEY }}
+          restore-keys: ${{ runner.OS }}-x64-qt6-
+
+      - name: Choose Telegram API credentials.
+        shell: bash
+        run: |
+          ID="${SECRET_API_ID:-$SECRET_API_ID_ALT}"
+          HASH="${SECRET_API_HASH:-$SECRET_API_HASH_ALT}"
+          if [ -n "$SECRET_API_ID$SECRET_API_ID_ALT$SECRET_API_HASH$SECRET_API_HASH_ALT" ]; then
+            if [ -z "$ID" ] || [ -z "$HASH" ]; then
+              echo "Set both API_ID and API_HASH (or both TELEGRAM_API_ID and TELEGRAM_API_HASH)."
+              exit 1
+            fi
+            echo "Using Telegram API credentials from Actions secrets (api_id $ID)."
+            API="-D TDESKTOP_API_ID=$ID -D TDESKTOP_API_HASH=$HASH"
+            echo "$ID" > "$RUNNER_TEMP/grok_api_id.txt"
+          else
+            echo "No API_ID/API_HASH secrets. Using open credentials api_id 611335."
+            API="-D TDESKTOP_API_ID=611335 -D TDESKTOP_API_HASH=d524b414d21f4d37f08684c1df41ac9c"
+            echo "611335" > "$RUNNER_TEMP/grok_api_id.txt"
+          fi
+          echo "TDESKTOP_BUILD_API=$API" >> $GITHUB_ENV
+
+      - name: Libraries.
+        run: |
+          %TBUILD%\%REPO_NAME%\Telegram\build\prepare\win.bat skip-release silent
+
+      - name: Free up some disk space.
+        shell: bash
+        run: find $LibrariesPath '(' '(' ! '(' -name '*.lib' -o -name '*.a' -o -name '*.exe' -o -name '*.h' -o -name '*.hpp' -o -name '*.inc' -o -name '*.cmake' -o -name '*.pc' -o -path '*/include/*' -o -path '*/objects-*' -o -path '*/cache_keys/*' -o -path '*/patches/*' -o -path '*/nv-codec-headers/*' ')' -type f ')' -o -empty ')' -delete
+
+      - name: Telegram Desktop build.
+        run: |
+          cd %TBUILD%\%REPO_NAME%\Telegram
+          call configure.bat x64 ^
+          %TDESKTOP_BUILD_API% ^
+          -D CMAKE_CONFIGURATION_TYPES=Release ^
+          -D CMAKE_COMPILE_WARNING_AS_ERROR=ON ^
+          -D DESKTOP_APP_DISABLE_AUTOUPDATE=ON ^
+          -D DESKTOP_APP_DISABLE_CRASH_REPORTS=ON ^
+          -D DESKTOP_APP_ENABLE_LTO=OFF
+          cmake --build ..\out --config Release --parallel --target Telegram --target Updater
+
+      - name: Pack portable zip.
+        shell: pwsh
+        run: |
+          $out = Join-Path $env:TBUILD "$env:REPO_NAME\out\Release"
+          $stage = Join-Path $env:GITHUB_WORKSPACE "artifact\Telegram"
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+          Copy-Item (Join-Path $out "Telegram.exe") $stage
+          if (Test-Path (Join-Path $out "Updater.exe")) {
+            Copy-Item (Join-Path $out "Updater.exe") $stage
+          }
+          $modules = Join-Path $out "modules"
+          if (Test-Path $modules) {
+            Copy-Item $modules (Join-Path $stage "modules") -Recurse
+          }
+          $apiId = (Get-Content (Join-Path $env:RUNNER_TEMP "grok_api_id.txt") -Raw).Trim()
+          $note = @(
+            "64Gram Grok employees test build."
+            "Telegram api_id compiled into this exe: $apiId"
+            "Default when no Actions secrets are set: 611335 (open credentials, see docs/grok-windows-build.md)."
+            "To use your own later, set repository secrets API_ID and API_HASH and rerun Windows Grok build."
+            "The xAI key is entered in the panel settings after launch. It is not in this zip."
+            "Autoupdate is disabled."
+          ) -join "`n"
+          Set-Content -Encoding utf8 -Path (Join-Path $stage "BUILD.txt") -Value $note
+          $zip = Join-Path $env:GITHUB_WORKSPACE "64Gram-Grok-win-x64.zip"
+          if (Test-Path $zip) { Remove-Item $zip }
+          Compress-Archive -Path (Join-Path $env:GITHUB_WORKSPACE "artifact\*") -DestinationPath $zip
+
+      - uses: actions/upload-artifact@v7
+        name: Upload portable zip.
+        with:
+          name: 64Gram-Grok-win-x64
+          path: 64Gram-Grok-win-x64.zip
+          retention-days: 14

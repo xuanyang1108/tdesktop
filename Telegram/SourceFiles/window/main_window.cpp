@@ -667,6 +667,9 @@ int MainWindow::computeMinWidth() const {
 	if (_rightColumn) {
 		result += _rightColumn->width();
 	}
+	if (_grokPanel && !Core::App().passcodeLocked()) {
+		result += _grokPanel->width();
+	}
 	return result;
 }
 
@@ -877,11 +880,25 @@ void MainWindow::updateControlsGeometry() {
 		_screenReaderBar->moveToLeft(inner.x(), bodyTop);
 		bodyTop += _screenReaderBar->height();
 	}
-	if (_rightColumn) {
-		bodyWidth -= _rightColumn->width();
-		_rightColumn->setGeometry(bodyWidth, bodyTop, inner.width() - bodyWidth, inner.height() - (bodyTop - inner.y()));
+	auto rightEdge = bodyLeft + bodyWidth;
+	const auto columnHeight = inner.height() - (bodyTop - inner.y());
+	if (_grokPanel && !Core::App().passcodeLocked()) {
+		_grokPanel->show();
+		const auto grokWidth = _grokPanel->width();
+		rightEdge -= grokWidth;
+		bodyWidth -= grokWidth;
+		_grokPanel->setGeometry(rightEdge, bodyTop, grokWidth, columnHeight);
+		_grokPanel->raise();
+	} else if (_grokPanel) {
+		_grokPanel->hide();
 	}
-	_body->setGeometry(bodyLeft, bodyTop, bodyWidth, inner.height() - (bodyTop - inner.y()));
+	if (_rightColumn) {
+		const auto rightWidth = _rightColumn->width();
+		rightEdge -= rightWidth;
+		bodyWidth -= rightWidth;
+		_rightColumn->setGeometry(rightEdge, bodyTop, rightWidth, columnHeight);
+	}
+	_body->setGeometry(bodyLeft, bodyTop, bodyWidth, columnHeight);
 }
 
 void MainWindow::updateTitle() {
@@ -1092,6 +1109,23 @@ void MainWindow::showRightColumn(object_ptr<Ui::RpWidget> widget) {
 	if (!firstResize) {
 		updateMinimumSize();
 	}
+}
+
+void MainWindow::setGrokPanel(object_ptr<Ui::RpWidget> widget) {
+	_grokPanel = std::move(widget);
+	if (_grokPanel) {
+		_grokPanel->setParent(body());
+		_grokPanel->show();
+	} else if (!Core::Quitting()) {
+		setInnerFocus();
+	}
+	updateMinimumSize();
+	updateControlsGeometry();
+}
+
+void MainWindow::refreshGrokPanel() {
+	updateMinimumSize();
+	updateControlsGeometry();
 }
 
 int MainWindow::maximalExtendBy() const {

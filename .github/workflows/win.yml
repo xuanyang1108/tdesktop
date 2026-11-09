@@ -50,6 +50,7 @@ jobs:
 
   windows:
     name: Windows
+    if: ${{ !startsWith(github.head_ref, 'cursor/') && !startsWith(github.ref, 'refs/heads/cursor/') }}
     runs-on: ${{ matrix.arch == 'arm64' && 'windows-11-arm' || ((github.event_name == 'pull_request' || startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/nightly') && 'depot-windows-latest-16' || 'windows-latest') }}
 
     strategy:
@@ -67,6 +68,10 @@ jobs:
       UPLOAD_ARTIFACT: "true"
       ONLY_CACHE: "false"
       PREPARE_PATH: "Telegram/build/prepare/prepare.py"
+      SECRET_API_ID: ${{ secrets.API_ID }}
+      SECRET_API_HASH: ${{ secrets.API_HASH }}
+      SECRET_API_ID_ALT: ${{ secrets.TELEGRAM_API_ID }}
+      SECRET_API_HASH_ALT: ${{ secrets.TELEGRAM_API_HASH }}
 
     defaults:
       run:
@@ -209,9 +214,17 @@ jobs:
 
           echo "ARTIFACT_NAME=$ARTIFACT_NAME" >> $GITHUB_ENV
 
-          API="-D TDESKTOP_API_TEST=ON"
-          if [ $GITHUB_REF == 'refs/heads/nightly' ]; then
-            echo "Use the open credentials."
+          ID="${SECRET_API_ID:-$SECRET_API_ID_ALT}"
+          HASH="${SECRET_API_HASH:-$SECRET_API_HASH_ALT}"
+          if [ -n "$SECRET_API_ID$SECRET_API_ID_ALT$SECRET_API_HASH$SECRET_API_HASH_ALT" ]; then
+            if [ -z "$ID" ] || [ -z "$HASH" ]; then
+              echo "Set both API_ID and API_HASH secrets (or both TELEGRAM_API_ID and TELEGRAM_API_HASH)."
+              exit 1
+            fi
+            echo "Using Telegram API credentials from Actions secrets (api_id $ID)."
+            API="-D TDESKTOP_API_ID=$ID -D TDESKTOP_API_HASH=$HASH"
+          else
+            echo "No API_ID/API_HASH secrets. Using the open credentials already in this workflow (api_id 611335)."
             API="-D TDESKTOP_API_ID=611335 -D TDESKTOP_API_HASH=d524b414d21f4d37f08684c1df41ac9c"
           fi
           echo "TDESKTOP_BUILD_API=$API" >> $GITHUB_ENV

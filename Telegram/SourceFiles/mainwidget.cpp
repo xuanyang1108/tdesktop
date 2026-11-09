@@ -7,6 +7,8 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "mainwidget.h"
 
+#include "grok/grok_panel.h"
+
 #include "api/api_updates.h"
 #include "api/api_views.h"
 #include "data/components/scheduled_messages.h"
@@ -290,6 +292,11 @@ MainWidget::MainWidget(
 	if (_dialogs) {
 		setupConnectingWidget();
 	}
+	crl::on_main(this, [=] {
+		if (!_grok) {
+			_grok = std::make_unique<Grok::Host>(_controller);
+		}
+	});
 
 	_history->cancelRequests(
 	) | rpl::on_next([=] {

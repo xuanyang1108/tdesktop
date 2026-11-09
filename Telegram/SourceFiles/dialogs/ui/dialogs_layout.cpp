@@ -7,6 +7,8 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "dialogs/ui/dialogs_layout.h"
 
+#include "grok/grok_badge.h"
+
 #include "base/options.h"
 #include "base/unixtime.h"
 #include "core/ui_integration.h"
@@ -1078,6 +1080,9 @@ void PaintRow(
 		if (quick->rippleFg->empty()) {
 			quick->rippleFg.reset();
 		}
+	}
+	if (history && !context.narrow) {
+		Grok::PaintOperatingBadge(p, history->peer->id, geometry);
 	}
 }
 

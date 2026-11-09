@@ -2607,6 +2607,16 @@ PRIVATE
     window/themes/window_themes_embedded.h
     window/themes/window_themes_generate_name.cpp
     window/themes/window_themes_generate_name.h
+    grok/grok_actions.cpp
+    grok/grok_actions.h
+    grok/grok_api.cpp
+    grok/grok_api.h
+    grok/grok_badge.cpp
+    grok/grok_badge.h
+    grok/grok_panel.cpp
+    grok/grok_panel.h
+    grok/grok_storage.cpp
+    grok/grok_storage.h
     apiwrap.cpp
     apiwrap.h
     config.h
