@@ -9,6 +9,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 
 #include "grok/grok_badge.h"
 #include "history/history.h"
+#include "main/main_session.h"
 #include "window/window_session_controller.h"
 
 #include <QtCore/QJsonDocument>
@@ -61,49 +62,49 @@ constexpr auto kMaxRounds = 6;
 		u"list_chats"_q,
 		u"按名称或分组列出对话。query 和 folder 都可以留空。"_q,
 		QJsonObject{
-			{ u"query"_q, Prop(u"string"_q, u"对话名称或用户名的一部分") },
-			{ u"folder"_q, Prop(u"string"_q, u"分组名称，例如工作频道") },
-			{ u"limit"_q, Prop(u"integer"_q, u"最多返回多少个，默认 30") },
+			{ u"query"_q, Prop(u"string"_q, u"对话名称或用户名的一部分"_q) },
+			{ u"folder"_q, Prop(u"string"_q, u"分组名称，例如工作频道"_q) },
+			{ u"limit"_q, Prop(u"integer"_q, u"最多返回多少个，默认 30"_q) },
 		},
 		QJsonArray()));
 	tools.append(Tool(
 		u"read_messages"_q,
 		u"读取一个对话的最近文字消息。chat 留空表示当前打开的对话。返回里的 #编号用于转发。"_q,
 		QJsonObject{
-			{ u"chat"_q, Prop(u"string"_q, u"对话名称或用户名，留空表示当前对话") },
-			{ u"limit"_q, Prop(u"integer"_q, u"条数，默认 20，最多 40") },
+			{ u"chat"_q, Prop(u"string"_q, u"对话名称或用户名，留空表示当前对话"_q) },
+			{ u"limit"_q, Prop(u"integer"_q, u"条数，默认 20，最多 40"_q) },
 		},
 		QJsonArray()));
 	tools.append(Tool(
 		u"open_chat"_q,
 		u"在左侧打开一个对话，不发送消息。"_q,
 		QJsonObject{
-			{ u"chat"_q, Prop(u"string"_q, u"对话名称或用户名") },
+			{ u"chat"_q, Prop(u"string"_q, u"对话名称或用户名"_q) },
 		},
 		QJsonArray{ u"chat"_q }));
 	tools.append(Tool(
 		u"draft_message"_q,
 		u"把文字放进对话输入框，不发送。"_q,
 		QJsonObject{
-			{ u"chat"_q, Prop(u"string"_q, u"对话名称，留空表示当前对话") },
-			{ u"text"_q, Prop(u"string"_q, u"草稿正文") },
+			{ u"chat"_q, Prop(u"string"_q, u"对话名称，留空表示当前对话"_q) },
+			{ u"text"_q, Prop(u"string"_q, u"草稿正文"_q) },
 		},
 		QJsonArray{ u"text"_q }));
 	tools.append(Tool(
 		u"send_message"_q,
 		u"发送一条文字消息。会先等用户在面板里确认。"_q,
 		QJsonObject{
-			{ u"chat"_q, Prop(u"string"_q, u"对话名称，留空表示当前对话") },
-			{ u"text"_q, Prop(u"string"_q, u"要发送的正文") },
+			{ u"chat"_q, Prop(u"string"_q, u"对话名称，留空表示当前对话"_q) },
+			{ u"text"_q, Prop(u"string"_q, u"要发送的正文"_q) },
 		},
 		QJsonArray{ u"text"_q }));
 	tools.append(Tool(
 		u"forward_message"_q,
 		u"把一条已读到的消息转发到另一个对话。message_id 用 read_messages 结果里的编号。会先等用户确认。"_q,
 		QJsonObject{
-			{ u"from_chat"_q, Prop(u"string"_q, u"来源对话，留空表示当前对话") },
-			{ u"message_id"_q, Prop(u"string"_q, u"消息编号，不要带 #") },
-			{ u"to_chat"_q, Prop(u"string"_q, u"目标对话名称") },
+			{ u"from_chat"_q, Prop(u"string"_q, u"来源对话，留空表示当前对话"_q) },
+			{ u"message_id"_q, Prop(u"string"_q, u"消息编号，不要带 #"_q) },
+			{ u"to_chat"_q, Prop(u"string"_q, u"目标对话名称"_q) },
 		},
 		QJsonArray{ u"message_id"_q, u"to_chat"_q }));
 	return tools;
@@ -517,9 +518,8 @@ void Agent::callModel() {
 	request.setRawHeader("User-Agent", "64Gram-Grok");
 	request.setTransferTimeout(90000);
 	const auto generation = _generation;
-	const auto reply = Network().post(
-		request,
-		QJsonDocument(body).toJson(QJsonDocument::Compact));
+	const auto payload = QJsonDocument(body).toJson(QJsonDocument::Compact);
+	const auto reply = Network().post(request, payload);
 	_reply = reply;
 	QObject::connect(reply, &QNetworkReply::finished, this, [=] {
 		if (generation != _generation) {

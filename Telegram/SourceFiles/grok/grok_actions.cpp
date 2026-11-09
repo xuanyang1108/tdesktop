@@ -21,6 +21,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "grok/grok_badge.h"
 #include "history/history.h"
 #include "history/history_item.h"
+#include "history/view/history_view_element.h"
 #include "main/main_session.h"
 #include "mtproto/mtproto_response.h"
 #include "window/window_session_controller.h"
@@ -244,8 +245,8 @@ void ReadMessages(
 		return;
 	}
 	const auto peer = history->peer;
-	auto &session = controller->session();
-	const auto requestId = session.api().request(MTPmessages_GetHistory(
+	const auto session = &controller->session();
+	const auto requestId = session->api().request(MTPmessages_GetHistory(
 		peer->input(),
 		MTP_int(0),
 		MTP_int(0),
@@ -255,7 +256,7 @@ void ReadMessages(
 		MTP_int(0),
 		MTP_long(0)
 	)).done(crl::guard(guard, [=](const MTPmessages_Messages &result) {
-		session.data().processExistingMessages(peer->asChannel(), result);
+		session->data().processExistingMessages(peer->asChannel(), result);
 		const auto text = FormatMessages(history, limit);
 		done(ToolResult{ text, u"读取了消息"_q, true });
 	})).fail(crl::guard(guard, [=](const MTP::Error &error) {

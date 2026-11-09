@@ -8,10 +8,13 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "grok/grok_panel.h"
 
 #include "grok/grok_api.h"
+#include "mainwindow.h"
 #include "styles/style_grok.h"
 #include "ui/painter.h"
 #include "ui/rp_widget.h"
 #include "window/window_session_controller.h"
+
+#include <QtWidgets/QScrollBar>
 
 #include <QtCore/QDateTime>
 #include <QtCore/QPointer>
@@ -122,23 +125,23 @@ int Transcript::paintBubble(
 		int inner) {
 	const auto font = st::normalFont->f;
 	if (bubble.role == u"card"_q) {
-		auto height = st::grokPad + st::semiboldFont->height + st::grokGap;
+		auto cardHeight = st::grokPad + st::semiboldFont->height + st::grokGap;
 		for (const auto &step : bubble.steps) {
-			height += st::normalFont->height + st::grokGap;
+			cardHeight += st::normalFont->height + st::grokGap;
 		}
 		if (!bubble.steps.empty()) {
-			height += st::grokGap + st::lineWidth * 4;
+			cardHeight += st::grokGap + st::lineWidth * 4;
 		}
 		if (bubble.showPause || bubble.showConfirm) {
-			height += st::grokGap + st::grokButtonHeight;
+			cardHeight += st::grokGap + st::grokButtonHeight;
 		}
-		height += st::grokPad;
+		cardHeight += st::grokPad;
 		if (!p) {
-			return height;
+			return cardHeight;
 		}
 		p->setPen(Qt::NoPen);
 		p->setBrush(kCard);
-		p->drawRoundedRect(x, y, inner, height, st::grokRadius, st::grokRadius);
+		p->drawRoundedRect(x, y, inner, cardHeight, st::grokRadius, st::grokRadius);
 		auto cursor = y + st::grokPad;
 		p->setPen(kText);
 		p->setFont(st::semiboldFont);
@@ -227,7 +230,7 @@ int Transcript::paintBubble(
 				p->drawText(_confirm, Qt::AlignCenter, u"确认发布"_q);
 			}
 		}
-		return height;
+		return cardHeight;
 	}
 	const auto mine = (bubble.role == u"user"_q);
 	const auto textWidth = std::max(
@@ -309,6 +312,8 @@ int Transcript::render(QPainter *p, int width) {
 	}
 	return y + st::grokPad;
 }
+
+} // namespace
 
 class Panel final : public Ui::RpWidget {
 public:
@@ -1027,8 +1032,6 @@ void Panel::paintEvent(QPaintEvent *e) {
 		Qt::AlignLeft | Qt::AlignTop,
 		u"发送前需确认"_q);
 }
-
-} // namespace
 
 Host::Host(not_null<Window::SessionController*> controller)
 : _controller(controller) {
