@@ -21,6 +21,6 @@ namespace Grok {
 [[nodiscard]] PeerId OperatingPeer();
 void SetOperatingPeer(PeerId peerId);
 void SetOperatingHistory(Main::Session *session, History *history);
-void PaintOperatingBadge(QPainter &p, PeerId peerId, const QRect &row);
+void PaintOperatingBadge(Painter &p, PeerId peerId, const QRect &row);
 
 } // namespace Grok
