@@ -271,7 +271,6 @@ jobs:
           -D CMAKE_MSVC_DEBUG_INFORMATION_FORMAT= ^
           -D DESKTOP_APP_DISABLE_AUTOUPDATE=ON ^
           -D DESKTOP_APP_DISABLE_CRASH_REPORTS=ON
-          rem Debug matches the skip-release libraries. Qt Network needs dnsapi.
           cmake --build ..\out --config Debug --parallel --target Telegram --target Updater
 
       - name: Pack portable zip.
