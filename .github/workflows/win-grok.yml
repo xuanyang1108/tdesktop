@@ -271,7 +271,7 @@ jobs:
           -D CMAKE_MSVC_DEBUG_INFORMATION_FORMAT= ^
           -D DESKTOP_APP_DISABLE_AUTOUPDATE=ON ^
           -D DESKTOP_APP_DISABLE_CRASH_REPORTS=ON
-          cmake --build ..\out --config Debug --parallel --target Telegram --target Updater
+          cmake --build ..\out --config Debug --parallel --target Telegram
 
       - name: Pack portable zip.
         shell: pwsh
