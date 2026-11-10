@@ -28,6 +28,6 @@ xAI 的密钥不要放进 GitHub。装好之后，在面板右上角齿轮里填
 3. 跑完后，在该次运行的 **Artifacts** 里下载 `64Gram-Grok-win-x64`。
 4. 解压后运行 `Telegram.exe`。这是便携包，不是安装向导。自动更新已关掉，避免被官方包换掉。
 
-第一次会从源码编译 Qt 等依赖，可能接近 Actions 的 6 小时上限。第二次会用缓存，快很多。构建机是 GitHub 的 `windows-latest`，x64 Release，关闭 LTO。不需要 Depot runner。
+第一次会从源码编译 Qt 等依赖，可能接近 Actions 的 6 小时上限。第二次会用缓存，快很多。构建机是 GitHub 的 `windows-latest`，x64 Debug。库是 `skip-release` 编出来的 Debug 库，所以客户端也编 Debug，和上游 Windows CI 一样。不需要 Depot runner。
 
 `cursor/**` 上的推送和 PR 会跳过原来的 Windows 大矩阵（`.github/workflows/win.yml`），免得同时开 8 个容易失败的 Depot / ARM 任务。那个大矩阵如果手动在其他分支上跑，同样是：有 `API_ID` + `API_HASH` 就用你的，否则用上面的 open credentials。

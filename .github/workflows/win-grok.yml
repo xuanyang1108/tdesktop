@@ -1,6 +1,6 @@
 name: Windows Grok build
 
-# One x64 Release portable build for this fork.
+# One x64 Debug portable build for this fork.
 # Without API_ID / API_HASH secrets it uses the open credentials already
 # committed in .github/workflows/win.yml (api_id 611335). See
 # docs/grok-windows-build.md.
