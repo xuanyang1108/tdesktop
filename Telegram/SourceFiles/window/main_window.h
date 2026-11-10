@@ -103,6 +103,8 @@ public:
 	void positionUpdated();
 
 	void showRightColumn(object_ptr<Ui::RpWidget> widget);
+	void setGrokPanel(object_ptr<Ui::RpWidget> widget);
+	void refreshGrokPanel();
 	int maximalExtendBy() const;
 	bool canExtendNoMove(int extendBy) const;
 
@@ -214,6 +216,7 @@ private:
 	object_ptr<Ui::RpWidget> _screenReaderBar;
 	object_ptr<Ui::RpWidget> _body;
 	object_ptr<Ui::RpWidget> _rightColumn = { nullptr };
+	object_ptr<Ui::RpWidget> _grokPanel = { nullptr };
 
 	bool _isActive = false;
 

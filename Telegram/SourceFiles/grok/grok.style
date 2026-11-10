@@ -1,0 +1,25 @@
+/*
+This file is part of Telegram Desktop,
+the official desktop application for the Telegram messaging service.
+
+For license and copyright information please follow this link:
+https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
+*/
+using "ui/basic.style";
+
+grokPanelDefaultWidth: 380px;
+grokPanelMinWidth: 300px;
+grokPanelMaxWidth: 560px;
+grokRailWidth: 40px;
+grokHeaderHeight: 56px;
+grokEmployeesHeight: 96px;
+grokFooterHeight: 54px;
+grokInputHeight: 52px;
+grokResizeWidth: 6px;
+grokAvatar: 44px;
+grokPad: 12px;
+grokGap: 8px;
+grokRadius: 12px;
+grokToggleWidth: 36px;
+grokToggleHeight: 20px;
+grokButtonHeight: 32px;

@@ -84,6 +84,7 @@ set(style_files
     tgw/tgw.style
     window/window.style
     window/window_main_menu.style
+    grok/grok.style
     editor/editor.style
     statistics/statistics.style
 )

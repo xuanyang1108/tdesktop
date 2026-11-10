@@ -98,6 +98,10 @@ namespace Core {
 class Changelogs;
 } // namespace Core
 
+namespace Grok {
+class Host;
+} // namespace Grok
+
 extern const char kForceComposeSearchOneColumn[];
 extern const char kOptionUseNewChatView[];
 
@@ -387,6 +391,8 @@ private:
 
 	// _changelogs depends on _data, subscribes on chats loading event.
 	const std::unique_ptr<Core::Changelogs> _changelogs;
+
+	std::unique_ptr<Grok::Host> _grok;
 
 };
 
